@@ -394,3 +394,50 @@ plt.show()
 # Observation:
 # Electronic check users have the highest number of churned customers.
 # The company should investigate whether payment convenience or customer experience contributes to this pattern.
+# Step 1: Prepare Data for Machine Learning
+
+# Remove customerID because it is only an identifier
+model_data = data.drop(columns=["customerID"])
+
+# Convert Churn into numerical values
+model_data["Churn"] = model_data["Churn"].map({
+    "No": 0,
+    "Yes": 1
+})
+
+# Separate input features and target variable
+X = model_data.drop(columns=["Churn"])
+y = model_data["Churn"]
+
+# Display the dataset information
+print("\nInput Features Shape:", X.shape)
+print("Target Variable Shape:", y.shape)
+
+print("\nTarget Variable Distribution:")
+print(y.value_counts())
+
+print("\nFirst five rows of input features:")
+print(X.head())
+
+# Step 2: Split Data into Training and Testing Sets
+
+from sklearn.model_selection import train_test_split
+
+# Split the dataset while preserving the churn ratio
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.20,
+    random_state=42,
+    stratify=y
+)
+
+# Display the sizes of the datasets
+print("\nTraining Features Shape:", X_train.shape)
+print("Testing Features Shape:", X_test.shape)
+
+print("\nTraining Target Distribution:")
+print(y_train.value_counts())
+
+print("\nTesting Target Distribution:")
+print(y_test.value_counts())
