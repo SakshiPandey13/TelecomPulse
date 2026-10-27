@@ -1,0 +1,5 @@
+Model,Accuracy,Churn Precision,Churn Recall,Churn F1,Macro F1,Balanced Accuracy
+Decision Tree,72.89,48.98,51.6,50.26,65.81,66.09
+Random Forest,79.49,64.31,51.07,56.93,71.73,70.41
+Logistic Regression,79.84,64.06,54.81,59.08,72.85,71.85
+KNN,74.24,51.51,50.27,50.88,66.71,66.58

@@ -2,6 +2,15 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+from sklearn.tree import plot_tree
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
 
 # Load the Telco Customer Churn dataset
 file_path = r"D:\Telco_Customer_Churn_Prediction\data\raw\WA_Fn-UseC_-Telco-Customer-Churn.csv"
@@ -280,27 +289,14 @@ churned_charges = data[data["Churn"] == "Yes"]["MonthlyCharges"]
 
 # Create a box plot
 plt.figure(figsize=(8, 5))
-
-plt.boxplot(
-    [stayed_charges, churned_charges],
-    tick_labels=["Stayed", "Churned"],
-    patch_artist=True,
-    boxprops=dict(facecolor="#16B8A6"),
-    medianprops=dict(color="black", linewidth=2)
-)
-
+plt.boxplot([stayed_charges, churned_charges],tick_labels=["Stayed", "Churned"],patch_artist=True,boxprops=dict(facecolor="#16B8A6"),medianprops=dict(color="black", linewidth=2))
 plt.title("Monthly Charges by Customer Churn")
 plt.xlabel("Customer Status")
 plt.ylabel("Monthly Charges")
 plt.tight_layout()
 
 # Save the chart
-plt.savefig(
-    os.path.join(visualization_path, "04_monthly_charges_by_churn.png"),
-    dpi=300,
-    bbox_inches="tight"
-)
-
+plt.savefig(os.path.join(visualization_path, "04_monthly_charges_by_churn.png"),dpi=300,bbox_inches="tight")
 plt.show()
 
 # Observation:
@@ -317,18 +313,10 @@ stayed_counts = stayed["InternetService"].value_counts()
 churned_counts = churned["InternetService"].value_counts()
 
 # Combine the counts
-internet_counts = pd.DataFrame({
-    "Stayed": stayed_counts,
-    "Churned": churned_counts
-}).fillna(0)
+internet_counts = pd.DataFrame({"Stayed": stayed_counts,"Churned": churned_counts}).fillna(0)
 
 # Create a bar chart
-internet_counts.plot(
-    kind="bar",
-    color=["#16B8A6", "#FF6B6B"],
-    figsize=(8, 5)
-)
-
+internet_counts.plot(kind="bar",color=["#16B8A6", "#FF6B6B"],figsize=(8, 5))
 plt.title("Customer Churn by Internet Service")
 plt.xlabel("Internet Service")
 plt.ylabel("Number of Customers")
@@ -337,12 +325,7 @@ plt.legend(title="Customer Status")
 plt.tight_layout()
 
 # Save the chart
-plt.savefig(
-    os.path.join(visualization_path, "05_churn_by_internet_service.png"),
-    dpi=300,
-    bbox_inches="tight"
-)
-
+plt.savefig(os.path.join(visualization_path, "05_churn_by_internet_service.png"),dpi=300,bbox_inches="tight")
 plt.show()
 
 # Observation:
@@ -394,16 +377,121 @@ plt.show()
 # Observation:
 # Electronic check users have the highest number of churned customers.
 # The company should investigate whether payment convenience or customer experience contributes to this pattern.
+
+# Additional Analysis 1: Churn Rate by Payment Method
+# Count all customers for each payment method
+total_customers = data.groupby("PaymentMethod").size()
+
+# Count customers who churned for each payment method
+churned_customers = (
+    data[data["Churn"] == "Yes"]
+    .groupby("PaymentMethod")
+    .size()
+)
+
+# Calculate churn rate in percentage
+payment_churn_rate = (
+    churned_customers / total_customers * 100
+)
+
+print("\nChurn Rate by Payment Method (%):")
+print(payment_churn_rate.round(2))
+
+# Create a bar chart
+plt.figure(figsize=(9, 5))
+
+plt.bar(
+    payment_churn_rate.index,
+    payment_churn_rate.values,
+    color=["#16B8A6", "#6C5CE7", "#FF6B6B", "#FFC857"]
+)
+
+plt.title("Churn Rate by Payment Method")
+plt.xlabel("Payment Method")
+plt.ylabel("Churn Rate (%)")
+plt.xticks(rotation=20, ha="right")
+
+plt.tight_layout()
+
+# Save the chart
+plt.savefig(
+    os.path.join(
+        visualization_path,
+        "07_churn_rate_by_payment_method.png"
+    ),
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.show()
+
+# Observation:
+# Electronic check users have the highest churn rate at approximately
+# 45%, while automatic bank transfer and automatic credit card users
+# have lower churn rates of around 15–17%. The company should investigate
+# why electronic check users are more likely to leave.
+
+# Additional Analysis 2: Correlation Analysis
+# Select numerical columns
+numeric_data = data[
+    ["tenure", "MonthlyCharges", "TotalCharges"]
+]
+
+# Calculate correlation
+correlation = numeric_data.corr()
+
+print("\nCorrelation Matrix:")
+print(correlation.round(2))
+
+# Create a correlation heatmap
+plt.figure(figsize=(7, 5))
+sns.heatmap(correlation,annot=True,cmap="coolwarm",fmt=".2f")
+plt.title("Correlation Between Numerical Features")
+plt.tight_layout()
+
+# Save the chart
+plt.savefig(os.path.join(visualization_path, "08_correlation_heatmap.png"),dpi=300,bbox_inches="tight")
+plt.show()
+
+# Observation:
+# Tenure and TotalCharges show a strong positive correlation of 0.83.
+# MonthlyCharges and TotalCharges have a moderate positive correlation of 0.65, while tenure and MonthlyCharges have a weak positive correlation of 0.25.
+plt.figure(figsize=(10, 6))
+
+for churn_status, label in [("No", "No Churn"), ("Yes", "Churn")]:
+    subset = data[data["Churn"] == churn_status]
+    plt.scatter(
+        subset["tenure"],
+        subset["TotalCharges"],
+        label=label,
+        alpha=0.5
+    )
+
+plt.title("Tenure vs Total Charges by Churn Status")
+plt.xlabel("Tenure (Months)")
+plt.ylabel("Total Charges")
+plt.legend()
+plt.tight_layout()
+plt.savefig(
+    r"D:\Telco_Customer_Churn_Prediction\visualisation\10_tenure_vs_total_charges.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+plt.show()
+# Observation:
+# Total charges generally increase with customer tenure.
+# This is expected because customers who stay longer accumulate
+# charges over a greater number of months.
+# Churned and non-churned customers overlap considerably across
+# the plot, so these two variables alone cannot clearly distinguish
+# customers who will churn.
 # Step 1: Prepare Data for Machine Learning
 
 # Remove customerID because it is only an identifier
 model_data = data.drop(columns=["customerID"])
 
 # Convert Churn into numerical values
-model_data["Churn"] = model_data["Churn"].map({
-    "No": 0,
-    "Yes": 1
-})
+model_data["Churn"] = model_data["Churn"].map({"No": 0,"Yes": 1})
 
 # Separate input features and target variable
 X = model_data.drop(columns=["Churn"])
@@ -420,24 +508,184 @@ print("\nFirst five rows of input features:")
 print(X.head())
 
 # Step 2: Split Data into Training and Testing Sets
-
-from sklearn.model_selection import train_test_split
-
 # Split the dataset while preserving the churn ratio
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.20,
-    random_state=42,
-    stratify=y
-)
-
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.20,random_state=42,stratify=y)
 # Display the sizes of the datasets
 print("\nTraining Features Shape:", X_train.shape)
 print("Testing Features Shape:", X_test.shape)
-
 print("\nTraining Target Distribution:")
 print(y_train.value_counts())
-
 print("\nTesting Target Distribution:")
 print(y_test.value_counts())
+
+# Step 3: Encode Categorical Features
+
+from sklearn.preprocessing import LabelEncoder
+
+X_train_encoded = X_train.copy()
+X_test_encoded = X_test.copy()
+
+encoders = {}
+
+categorical_columns = X_train.select_dtypes(
+    include=["object"]
+).columns
+
+for column in categorical_columns:
+    encoder = LabelEncoder()
+
+    X_train_encoded[column] = encoder.fit_transform(
+        X_train[column]
+    )
+
+    X_test_encoded[column] = encoder.transform(
+        X_test[column]
+    )
+
+    encoders[column] = encoder
+
+print("\nEncoded Training Features:")
+print(X_train_encoded.head())
+
+print("\nEncoded Testing Features:")
+print(X_test_encoded.head())
+
+print("\nTraining Data Shape:", X_train_encoded.shape)
+print("Testing Data Shape:", X_test_encoded.shape)
+
+print("\nMissing Values in Training Data:")
+print(X_train_encoded.isnull().sum().sum())
+
+print("\nMissing Values in Testing Data:")
+print(X_test_encoded.isnull().sum().sum())
+
+dt_model = DecisionTreeClassifier(random_state=42)
+
+dt_model.fit(X_train_encoded, y_train)
+
+y_pred_dt = dt_model.predict(X_test_encoded)
+
+dt_accuracy = accuracy_score(y_test, y_pred_dt)
+
+print("\nDecision Tree Results")
+print("Accuracy:", round(dt_accuracy * 100, 2), "%")
+
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred_dt))
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred_dt))
+
+plt.figure(figsize=(24, 12))
+plot_tree(dt_model,feature_names=X_train_encoded.columns,class_names=["No Churn", "Churn"],filled=True,rounded=True,max_depth=3,fontsize=9)
+
+plt.title("Decision Tree for Telecom Customer Churn")
+plt.savefig(r"D:\Telco_Customer_Churn_Prediction\visualisation\09_decision_tree.png",dpi=300,bbox_inches="tight")
+plt.show()
+
+# Step 5: Random Forest Classifier
+rf_model = RandomForestClassifier(
+    n_estimators=100,
+    random_state=42
+)
+
+rf_model.fit(X_train_encoded, y_train)
+
+y_pred_rf = rf_model.predict(X_test_encoded)
+
+rf_accuracy = accuracy_score(y_test, y_pred_rf)
+
+print("\nRandom Forest Results")
+print("Accuracy:", round(rf_accuracy * 100, 2), "%")
+
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred_rf))
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred_rf))
+
+# Step 6: Logistic Regression with Feature Scaling
+scaler = StandardScaler()
+
+X_train_scaled = scaler.fit_transform(X_train_encoded)
+X_test_scaled = scaler.transform(X_test_encoded)
+
+lr_model = LogisticRegression(max_iter=2000)
+
+lr_model.fit(X_train_scaled, y_train)
+
+y_pred_lr = lr_model.predict(X_test_scaled)
+
+lr_accuracy = accuracy_score(y_test, y_pred_lr)
+
+print("\nLogistic Regression Results")
+print("Accuracy:", round(lr_accuracy * 100, 2), "%")
+
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred_lr))
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred_lr))
+
+# Step 7: K-Nearest Neighbors
+
+knn_model = KNeighborsClassifier(n_neighbors=5)
+
+knn_model.fit(X_train_scaled, y_train)
+
+y_pred_knn = knn_model.predict(X_test_scaled)
+
+knn_accuracy = accuracy_score(y_test, y_pred_knn)
+
+print("\nKNN Results")
+print("Accuracy:", round(knn_accuracy * 100, 2), "%")
+
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred_knn))
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred_knn))
+
+
+# Step 8: Compare All Four Models
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    balanced_accuracy_score
+)
+import pandas as pd
+
+models = {
+    "Decision Tree": y_pred_dt,
+    "Random Forest": y_pred_rf,
+    "Logistic Regression": y_pred_lr,
+    "KNN": y_pred_knn
+}
+
+results = []
+
+for name, predictions in models.items():
+    results.append({
+        "Model": name,
+        "Accuracy": round(accuracy_score(y_test, predictions) * 100, 2),
+        "Churn Precision": round(precision_score(y_test, predictions, zero_division=0) * 100, 2),
+        "Churn Recall": round(recall_score(y_test, predictions, zero_division=0) * 100, 2),
+        "Churn F1": round(f1_score(y_test, predictions, zero_division=0) * 100, 2),
+        "Macro F1": round(f1_score(y_test, predictions, average="macro") * 100, 2),
+        "Balanced Accuracy": round(balanced_accuracy_score(y_test, predictions) * 100, 2)
+    })
+
+results_df = pd.DataFrame(results)
+
+print("\nModel Comparison:")
+print(results_df.to_string(index=False))
+
+
+results_df.to_csv("model_comparison.csv", index=False)
+
+print("\nModel comparison saved successfully.")
+
+
