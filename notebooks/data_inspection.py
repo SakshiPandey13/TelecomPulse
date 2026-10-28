@@ -509,7 +509,7 @@ print(X.head())
 
 # Step 2: Split Data into Training and Testing Sets
 # Split the dataset while preserving the churn ratio
-X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.20,random_state=42,stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.30,random_state=42,stratify=y)
 # Display the sizes of the datasets
 print("\nTraining Features Shape:", X_train.shape)
 print("Testing Features Shape:", X_test.shape)
@@ -604,6 +604,45 @@ print(confusion_matrix(y_test, y_pred_rf))
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred_rf))
 
+# Step 7: Random Forest Feature Importance
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+feature_importance = pd.DataFrame({
+    "Feature": X_train_encoded.columns,
+    "Importance": rf_model.feature_importances_
+})
+
+feature_importance = feature_importance.sort_values(
+    by="Importance",
+    ascending=False
+)
+
+print("\nRandom Forest Feature Importance:")
+print(feature_importance.to_string(index=False))
+
+plt.figure(figsize=(10, 7))
+
+plt.barh(
+    feature_importance["Feature"].head(10)[::-1],
+    feature_importance["Importance"].head(10)[::-1]
+)
+
+plt.title("Top 10 Features Influencing Customer Churn")
+plt.xlabel("Feature Importance")
+plt.ylabel("Features")
+plt.tight_layout()
+
+plt.savefig(
+    r"D:\Telco_Customer_Churn_Prediction\visualisation\11_feature_importance.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.show()
+
+
 # Step 6: Logistic Regression with Feature Scaling
 scaler = StandardScaler()
 
@@ -626,6 +665,7 @@ print(confusion_matrix(y_test, y_pred_lr))
 
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred_lr))
+
 
 # Step 7: K-Nearest Neighbors
 
@@ -688,4 +728,5 @@ results_df.to_csv("model_comparison.csv", index=False)
 
 print("\nModel comparison saved successfully.")
 
-
+print("\nModel Comparison:")
+print(results_df.to_string(index=False))
